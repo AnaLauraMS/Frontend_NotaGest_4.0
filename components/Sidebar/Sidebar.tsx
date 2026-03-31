@@ -78,16 +78,19 @@ const Sidebar: React.FC<SidebarProps> = ({
             {/* Sidebar */}
             <aside
                 className={`
-                    fixed top-0 left-0 h-full w-64 bg-white p-4 border-r border-gray-100
+                    fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-100 flex flex-col
                     transition-transform duration-300 ease-in-out z-50
                     ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-                    lg:translate-x-0 lg:static lg:h-auto lg:z-auto lg:shadow-none
+                    md:translate-x-0 md:shadow-none
                     shadow-[4px_0_6px_-2px_rgba(0,0,0,0.1)]
                 `}
             >
-                <div className="h-16 lg:h-4"></div> {/* espaço para o header */}
+                {/* Área do "Logo" / Cabeçalho da Sidebar (h-20 para alinhar com o HeaderAdmin) */}
+                <div className="h-20 shrink-0 flex items-center px-6 border-b border-gray-100 mb-2 bg-white w-full">
+                    <span className="text-xl font-extrabold text-sky-900 tracking-tight">NotaGest</span>
+                </div>
 
-                <nav className="space-y-2 pt-4">
+                <nav className="space-y-2 pt-2 px-4 flex-1 overflow-y-auto">
                     <SimpleLink Icon={HomeIcon} title="Dashboard" view="dashboard" />
 
                     <div>
@@ -157,7 +160,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                 </nav>
 
-                <div className="absolute bottom-4 left-0 w-full px-4 border-t border-gray-100 pt-4">
+                <div className="w-full px-4 border-t border-gray-100 py-4 shrink-0 bg-white">
                     <p className="text-xs text-gray-400 text-center">v1.4.0 - Notagest</p>
                 </div>
             </aside>
@@ -165,7 +168,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             {/* Overlay mobile */}
             {isSidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-black opacity-40 z-40 lg:hidden"
+                    className="fixed inset-0 bg-black opacity-40 z-40 md:hidden"
                     onClick={toggleSidebar}
                     aria-hidden="true"
                 />
