@@ -29,7 +29,7 @@ jobs:
 
       # 🐳 STEP OBRIGATÓRIO DO DOCKER
       - name: Build Docker Image
-        run: docker build -t frontend-pi .
+        run: docker build -t frontend .
 
       # 🔖 VERSIONAMENTO (igual backend)
       - name: Checkout com token
