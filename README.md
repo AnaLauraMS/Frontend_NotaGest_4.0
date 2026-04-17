@@ -23,5 +23,5 @@ docker build -t frontendnotaget .
 ### 🔹 2. Rodar o container
 
 ```bash
-docker run -d -p 4000:4000 frontend-pi
+docker run -d -p 4000:4000 frontendnotagest
 ````
