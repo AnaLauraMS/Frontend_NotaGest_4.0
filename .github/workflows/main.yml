@@ -1,0 +1,123 @@
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - main
+    tags-ignore:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Rodar build
+        run: npm run build
+
+      # 🐳 STEP OBRIGATÓRIO DO DOCKER
+      - name: Build Docker Image
+        run: docker build -t frontendnotagest .
+
+      # 🔖 VERSIONAMENTO (igual backend)
+      - name: Checkout com token
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+
+      - name: Instalar semver
+        run: npm install -g semver
+
+      - name: Criar tag inicial (se não existir)
+        run: |
+          if [ -z "$(git tag)" ]; then
+            git config --global user.name 'github-actions'
+            git config --global user.email 'github-actions@github.com'
+            git tag -a v0.0.0 -m "Initial release"
+            git push origin v0.0.0
+          fi
+
+      - name: Calcular versão
+        run: |
+          git fetch --tags
+          LAST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+          
+          if [ -z "$LAST_TAG" ]; then
+            LAST_TAG="v0.0.0"
+          fi
+          
+          CURRENT_VERSION=${LAST_TAG#v}
+
+          COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"%s")
+
+          MAJOR=0
+          MINOR=0
+          PATCH=0
+
+          for COMMIT in "$COMMITS"; do
+            if [[ "$COMMIT" == *"BREAKING CHANGE"* ]]; then
+              MAJOR=1
+            elif [[ "$COMMIT" == *"feat"* ]]; then
+              MINOR=1
+            elif [[ "$COMMIT" == *"fix"* ]]; then
+              PATCH=1
+            fi
+          done
+
+          NEW_VERSION=$CURRENT_VERSION
+
+          if [[ $MAJOR -eq 1 ]]; then
+            NEW_VERSION=$(semver -i major $CURRENT_VERSION)
+          elif [[ $MINOR -eq 1 ]]; then
+            NEW_VERSION=$(semver -i minor $CURRENT_VERSION)
+          elif [[ $PATCH -eq 1 ]]; then
+            NEW_VERSION=$(semver -i patch $CURRENT_VERSION)
+          else
+            echo "Nenhuma mudança relevante. Não será criada nova versão."
+            exit 0
+          fi
+
+          echo "Nova versão: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
+          
+          
+
+      - name: Atualizar package.json
+        run: npm version ${{ env.new_version }} --no-git-tag-version
+
+      - name: Commit e tag
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add package.json
+          git commit -m "chore(release): version ${{ env.new_version }}"
+          git tag v${{ env.new_version }}
+          git push origin main --tags
+
+      # 📧 EMAIL EM CASO DE ERRO
+      - name: Enviar e-mail de falha
+        uses: dawidd6/action-send-mail@v3
+        if: failure()
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.EMAIL_ORIGEM }}
+          password: ${{ secrets.SENHA_EMAIL }}
+          subject: Falha no Pipeline Frontend - ${{ github.repository }}
+          to: ${{ secrets.EMAIL_DESTINO }}
+          from: ${{ secrets.EMAIL_ORIGEM }}
