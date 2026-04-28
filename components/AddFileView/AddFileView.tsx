@@ -34,6 +34,8 @@ const AddFileView: React.FC<AddFileViewProps> = ({ onAddFile }) => {
     const [property, setProperty] = useState('');
     const [uploading, setUploading] = useState(false);
     const [properties, setProperties] = useState<{ id: string; nome: string }[]>([]);
+    const [analyzing, setAnalyzing] = useState(false);
+    const [aiFilePath, setAiFilePath] = useState<string | null>(null);
 
     const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
     const subcategories = ['Iluminação', 'Ferragem', 'Hidráulica', 'Acabamento', 'Pintura', 'Madeiramento', 'Outros'];
@@ -96,18 +98,22 @@ const AddFileView: React.FC<AddFileViewProps> = ({ onAddFile }) => {
                 return;
             }
 
-            // 1️⃣ Enviar o arquivo para o backend
-            const formData = new FormData();
-            formData.append('file', file);
+            // 1️⃣ Enviar o arquivo para o backend (Reaproveita upload feito pela IA se houver)
+            let filePath = aiFilePath;
 
-            const uploadResponse = await axios.post(`${BASE_URL}/api/uploadfile`, formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            if (!filePath) {
+                const formData = new FormData();
+                formData.append('file', file);
 
-            const filePath = uploadResponse.data.filePath;
+                const uploadResponse = await axios.post(`${BASE_URL}/api/uploadfile`, formData, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+
+                filePath = uploadResponse.data.filePath;
+            }
 
             // 2️⃣ Montar o objeto com todos os dados esperados pelo backend
             const newFile = {
@@ -151,6 +157,7 @@ const AddFileView: React.FC<AddFileViewProps> = ({ onAddFile }) => {
             setProperty('');
             setCategory('Construção');
             setSubcategory('Iluminação');
+            setAiFilePath(null);
 
             // ✅ Sucesso
             Swal.fire({
@@ -171,6 +178,95 @@ const AddFileView: React.FC<AddFileViewProps> = ({ onAddFile }) => {
             });
         } finally {
             setUploading(false);
+        }
+    };
+
+    // 🔹 Análise via Inteligência Artificial
+    const handleAnalyzeAI = async () => {
+        if (!file) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Nenhum arquivo',
+                text: 'Anexe um documento primeiro para que a IA possa analisar.',
+                confirmButtonColor: '#0c4a6e'
+            });
+            return;
+        }
+
+        setAnalyzing(true);
+
+        try {
+            const token = localStorage.getItem('token');
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const aiResponse = await axios.post(`${BASE_URL}/api/ai/extract`, formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            const responseData = aiResponse.data.data;
+            const parsedFilePath = aiResponse.data.filePath;
+
+            if (responseData.title) setTitle(responseData.title);
+            if (responseData.totalValue !== null) setValue(responseData.totalValue.toString());
+            if (responseData.emissionDate) setPurchaseDate(responseData.emissionDate);
+            if (responseData.observation) setObservation(responseData.observation);
+            
+            // Só sobrescreve categoria se for válida
+            if (responseData.category === "Construção" || responseData.category === "Reforma") {
+                setCategory(responseData.category);
+            }
+            if (subcategories.includes(responseData.subcategory)) {
+                setSubcategory(responseData.subcategory);
+            }
+
+            if (parsedFilePath) setAiFilePath(parsedFilePath);
+
+            // Alerta Humanizado baseado no Gemini
+            if (responseData.successStatus === 'FULL') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Leitura concluída!',
+                    text: responseData.aiMessage || 'Todos os dados foram extraídos com sucesso.',
+                    confirmButtonColor: '#0c4a6e'
+                });
+            } else if (responseData.successStatus === 'PARTIAL') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Leitura Incompleta',
+                    text: responseData.aiMessage,
+                    confirmButtonColor: '#eab308'
+                });
+            } else if (responseData.successStatus === 'FAILED') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Não foi possível ler',
+                    text: responseData.aiMessage,
+                    confirmButtonColor: '#ef4444'
+                });
+            } else {
+                 Swal.fire({
+                    icon: 'success',
+                    title: 'Dados preenchidos',
+                    text: 'A IA preencheu os campos disponíveis.',
+                    confirmButtonColor: '#0c4a6e',
+                    timer: 2000
+                });
+            }
+
+        } catch (error) {
+            console.error('Erro na análise da IA:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro na IA',
+                text: 'Não foi possível analisar o documento no momento.',
+                confirmButtonColor: '#0c4a6e'
+            });
+        } finally {
+            setAnalyzing(false);
         }
     };
     return (
@@ -252,13 +348,30 @@ const AddFileView: React.FC<AddFileViewProps> = ({ onAddFile }) => {
                         </select>
                     </div>
 
-                    <label className="group flex items-center justify-center w-full border-2 border-blue-300 rounded-lg px-6 py-4 cursor-pointer transition-all duration-300 hover:border-blue-400 hover:bg-blue-50">
+                    <label className="group flex items-center justify-center w-full border-2 border-dashed border-blue-300 rounded-lg px-6 py-4 cursor-pointer transition-all duration-300 hover:border-blue-400 hover:bg-blue-50">
                         <IoMdCloudUpload size={24} className="text-blue-400 group-hover:text-blue-500 transition-colors mr-3" />
                         <span className="text-blue-600 font-medium text-base">
                             {file ? file.name : 'Clique para anexar comprovante'}
                         </span>
                         <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="hidden" />
                     </label>
+
+                    {/* SEÇÃO DA INTELIGÊNCIA ARTIFICIAL */}
+                    <div className="flex flex-col items-center bg-sky-50 border border-sky-100 p-4 rounded-xl mt-4 shadow-sm">
+                        <p className="text-sm text-sky-800 font-medium mb-3 text-center">
+                            A Inteligência Artificial pode ler comprovantes borrados ou escritos à mão, mas para usar a IA você precisa anexar um arquivo primeiro.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={handleAnalyzeAI}
+                            disabled={!file || analyzing}
+                            className={`px-6 py-2.5 font-bold text-white rounded-lg transition-all duration-300 ease-in-out transform shadow-md flex items-center gap-2
+                                ${!file ? 'bg-gray-300 cursor-not-allowed opacity-70' : 
+                                  analyzing ? 'bg-sky-400 cursor-wait' : 'bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 hover:shadow-lg hover:-translate-y-0.5'}`}
+                        >
+                            <span className="text-xl">✨</span> {analyzing ? 'Analisando documento...' : 'Acionar IA'}
+                        </button>
+                    </div>
 
                     <div className="flex justify-end pt-2">
                         <button
