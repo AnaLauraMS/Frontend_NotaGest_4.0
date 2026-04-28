@@ -60,6 +60,7 @@ const UploadsPage = () => {
   const [properties, setProperties] = useState<PropertyDataForUI[]>([]);
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
 
@@ -215,8 +216,11 @@ const UploadsPage = () => {
     <div className="h-screen w-full bg-gray-50 font-['Plus_Jakarta_Sans',sans-serif] overflow-hidden relative">
       {/* Sidebar takes full height on the left */}
       <Sidebar
+        activeView={activeView}
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={toggleSidebar}
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
         setActiveView={setActiveView}
         handleListFiles={handleListFiles}
         handleListProperties={handleListProperties}
@@ -225,7 +229,7 @@ const UploadsPage = () => {
       />
 
       {/* Right Column containing Header and Main Area */}
-      <div className="flex flex-col h-full fully-contained w-full md:pl-64 transition-all duration-300">
+      <div className={`flex flex-col h-full fully-contained w-full transition-all duration-300 ${isCollapsed ? 'md:pl-20' : 'md:pl-64'}`}>
         <HeaderAdmin toggleSidebar={toggleSidebar} setActiveView={setActiveView} />
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8 relative">
