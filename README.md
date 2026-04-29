@@ -17,7 +17,7 @@ Este projeto utiliza Docker para facilitar a execução em qualquer ambiente.
 ### 🔹 1. Build da imagem
 
 ```bash
-docker build -t frontendnotaget .
+docker build -t frontendnotagest .
 ````
 
 ### 🔹 2. Rodar o container

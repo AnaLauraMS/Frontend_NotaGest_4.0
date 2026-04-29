@@ -5,6 +5,8 @@ import HeaderAdmin from '../HeaderAdmin/HeaderAdmin';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [activeView, setActiveView] = useState<'dashboard' | 'addFile' | 'addProperty' | 'perfil' | 'seguranca' | 'files' | 'properties' | 'chat'>('dashboard');
 
     const toggleSidebar = () => setSidebarOpen(prev => !prev);
 
@@ -13,20 +15,20 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const handleListProperties = () => console.log('Listar propriedades');
     const generatePDF = () => console.log('Gerar PDF');
     const exportExcel = () => console.log('Exportar Excel');
-    const setActiveView = (
-        view: 'dashboard' | 'addFile' | 'addProperty' | 'perfil' | 'seguranca' | 'files' | 'properties'
-    ) => console.log('Ativar view', view);
 
     return (
         <div className="flex h-screen overflow-hidden">
             <Sidebar
                 isSidebarOpen={isSidebarOpen}
                 toggleSidebar={toggleSidebar}
+                isCollapsed={isCollapsed}
+                setIsCollapsed={setIsCollapsed}
+                activeView={activeView}
+                setActiveView={setActiveView}
                 handleListFiles={handleListFiles}
                 handleListProperties={handleListProperties}
                 generatePDF={generatePDF}
                 exportExcel={exportExcel}
-                setActiveView={setActiveView}
             />
 
             <div className="flex-1 flex flex-col">
