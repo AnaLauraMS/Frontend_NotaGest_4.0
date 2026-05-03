@@ -8,7 +8,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 interface HeaderAdminProps {
   toggleSidebar: () => void;
   setActiveView: (
-    view: 'dashboard' | 'addFile' | 'addProperty' | 'perfil' | 'seguranca' | 'files' | 'properties'
+    view: 'dashboard' | 'addFile' | 'addProperty' | 'perfil' | 'seguranca' | 'files' | 'properties' | 'chat'
   ) => void;
 }
 

@@ -10,7 +10,8 @@ import {
     BuildingOfficeIcon,
     DocumentArrowDownIcon,
     ChevronLeftIcon,
-    ChevronRightIcon
+    ChevronRightIcon,
+    SparklesIcon
 } from '@heroicons/react/24/outline';
 
 interface SidebarProps {
@@ -112,6 +113,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                 <nav className="space-y-2 pt-2 px-4 flex-1 overflow-y-auto custom-scrollbar">
                     <SimpleLink Icon={HomeIcon} title="Dashboard" view="dashboard" />
+                    <SimpleLink Icon={SparklesIcon} title="Chat IA" view="chat" />
 
                     {/* Gestão de Arquivos */}
                     <div>

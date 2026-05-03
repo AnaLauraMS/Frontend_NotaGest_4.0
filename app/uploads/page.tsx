@@ -17,6 +17,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import SegurancaView from '../../components/SegurancaView/SegurancaView';
 import PerfilView from '../../components/PerfilView/PerfilView';
+import ChatView from '../../components/ChatView/ChatView';
 
 const Graphics = dynamic(() => import("../../components/Graphics/Graphics"), { ssr: false });
 
@@ -50,6 +51,7 @@ type View =
   | 'addProperty'
   | 'perfil'
   | 'seguranca'
+  | 'chat'
   | 'files'
   | 'properties';
 
@@ -265,6 +267,7 @@ const UploadsPage = () => {
 
           {activeView === 'addFile' && <AddFileView onAddFile={addFile} />}
           {activeView === 'addProperty' && <AddPropertyView onAddProperty={addProperty} />}
+          {activeView === 'chat' && <ChatView />}
           {activeView === 'perfil' && <PerfilView />}
           {activeView === 'seguranca' && <SegurancaView />}
         </main>
