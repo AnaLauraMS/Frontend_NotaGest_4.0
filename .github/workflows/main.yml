@@ -3,7 +3,7 @@ name: Frontend CI
 on:
   push:
     branches:
-      - main
+       prePI 
     tags-ignore:
       - 'v*'
 
@@ -106,7 +106,7 @@ jobs:
           git add package.json
           git commit -m "chore(release): version ${{ env.new_version }}"
           git tag v${{ env.new_version }}
-          git push origin main --tags
+          git push origin prePI --tags
 
       # 📧 EMAIL EM CASO DE ERRO
       - name: Enviar e-mail de falha
