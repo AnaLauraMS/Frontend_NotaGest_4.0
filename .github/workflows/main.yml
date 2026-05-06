@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
 
       - name: Configurar Node.js
         uses: actions/setup-node@v3
@@ -30,13 +33,7 @@ jobs:
       - name: Build Docker Image
         run: docker build -t frontendnotagest .
 
-      # 🔖 VERSIONAMENTO (igual backend)
-      - name: Checkout com token
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_TOKEN }}
-          fetch-depth: 0
-
+      # 🔖 VERSIONAMENTO
       - name: Instalar semver
         run: npm install -g semver
 
@@ -51,8 +48,10 @@ jobs:
 
       - name: Calcular versão
         run: |
-          git fetch --tags --force
+          # Como usamos fetch-depth: 0, as tags já estão aqui.
+          # Pegamos a tag mais recente ou usamos v0.0.0 como padrão.
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Ultima tag encontrada: $LAST_TAG"
           CURRENT_VERSION=${LAST_TAG#v}
 
           COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"%s")
