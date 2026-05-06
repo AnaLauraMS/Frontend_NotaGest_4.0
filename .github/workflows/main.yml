@@ -3,7 +3,7 @@ name: Frontend CI
 on:
   push:
     branches:
-      - prePI
+      - main
     tags-ignore:
       - 'v*'
 
