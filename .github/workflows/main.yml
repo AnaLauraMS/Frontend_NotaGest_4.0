@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout do código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configurar Node.js
         uses: actions/setup-node@v3
@@ -32,7 +32,7 @@ jobs:
 
       # 🔖 VERSIONAMENTO (igual backend)
       - name: Checkout com token
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
@@ -42,22 +42,17 @@ jobs:
 
       - name: Criar tag inicial (se não existir)
         run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
           if [ -z "$(git tag)" ]; then
-            git config --global user.name 'github-actions'
-            git config --global user.email 'github-actions@github.com'
             git tag -a v0.0.0 -m "Initial release"
             git push origin v0.0.0
           fi
 
       - name: Calcular versão
         run: |
-          git fetch --tags
-          LAST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
-          
-          if [ -z "$LAST_TAG" ]; then
-            LAST_TAG="v0.0.0"
-          fi
-          
+          git fetch --tags --force
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           CURRENT_VERSION=${LAST_TAG#v}
 
           COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"%s")
