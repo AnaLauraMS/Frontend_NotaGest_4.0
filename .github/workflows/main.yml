@@ -127,7 +127,7 @@ jobs:
             git tag v${{ env.new_version }}
           fi
 
-          git push origin prePI --tags
+          git push origin main --tags
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v4
