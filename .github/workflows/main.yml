@@ -48,10 +48,14 @@ jobs:
 
       - name: Calcular versão
         run: |
-          # Como usamos fetch-depth: 0, as tags já estão aqui.
-          # Pegamos a tag mais recente ou usamos v0.0.0 como padrão.
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "Ultima tag encontrada: $LAST_TAG"
+          # Busca a última tag que segue o padrão vX.X.X
+          LAST_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1)
+          
+          if [ -z "$LAST_TAG" ] || [ "$LAST_TAG" = "v" ]; then
+            LAST_TAG="v0.0.0"
+          fi
+          
+          echo "Ultima tag válida encontrada: $LAST_TAG"
           CURRENT_VERSION=${LAST_TAG#v}
 
           COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"%s")
