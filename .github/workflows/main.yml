@@ -3,7 +3,7 @@ name: Frontend CI
 on:
   push:
     branches:
-      - main
+      - prePI
     tags-ignore:
       - 'v*'
 
@@ -13,7 +13,10 @@ jobs:
 
     steps:
       - name: Checkout do código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
 
       - name: Configurar Node.js
         uses: actions/setup-node@v3
@@ -26,38 +29,43 @@ jobs:
       - name: Rodar build
         run: npm run build
 
-      # 🐳 STEP OBRIGATÓRIO DO DOCKER
-      - name: Build Docker Image
-        run: docker build -t frontendnotagest .
-
-      # 🔖 VERSIONAMENTO (igual backend)
-      - name: Checkout com token
-        uses: actions/checkout@v3
+      # 🐳 DOCKER LOGIN & BUILD & PUSH (Novo)
+      - name: Login no Docker Hub
+        uses: docker/login-action@v2
         with:
-          token: ${{ secrets.GH_TOKEN }}
-          fetch-depth: 0
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # 🔍 SONAR CLOUD STEP (Novo)
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # 🔖 VERSIONAMENTO
       - name: Instalar semver
         run: npm install -g semver
 
       - name: Criar tag inicial (se não existir)
         run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
           if [ -z "$(git tag)" ]; then
-            git config --global user.name 'github-actions'
-            git config --global user.email 'github-actions@github.com'
             git tag -a v0.0.0 -m "Initial release"
             git push origin v0.0.0
           fi
 
       - name: Calcular versão
         run: |
-          git fetch --tags
-          LAST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+          # Busca a última tag que segue o padrão vX.X.X
+          LAST_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1)
           
-          if [ -z "$LAST_TAG" ]; then
+          if [ -z "$LAST_TAG" ] || [ "$LAST_TAG" = "v" ]; then
             LAST_TAG="v0.0.0"
           fi
           
+          echo "Ultima tag válida encontrada: $LAST_TAG"
           CURRENT_VERSION=${LAST_TAG#v}
 
           COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"%s")
@@ -104,9 +112,31 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git add package.json
-          git commit -m "chore(release): version ${{ env.new_version }}"
-          git tag v${{ env.new_version }}
-          git push origin main --tags
+          
+          # Só faz commit se houver mudanças no package.json
+          if git diff --cached --quiet; then
+            echo "Sem mudanças para commitar."
+          else
+            git commit -m "chore(release): version ${{ env.new_version }}"
+          fi
+
+          # Só cria a tag se ela não existir
+          if git rev-parse v${{ env.new_version }} >/dev/null 2>&1; then
+            echo "Tag v${{ env.new_version }} já existe."
+          else
+            git tag v${{ env.new_version }}
+          fi
+
+          git push origin prePI --tags
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/notagest-frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/notagest-frontend:v${{ env.new_version }}
 
       # 📧 EMAIL EM CASO DE ERRO
       - name: Enviar e-mail de falha
@@ -121,3 +151,8 @@ jobs:
           subject: Falha no Pipeline Frontend - ${{ github.repository }}
           to: ${{ secrets.EMAIL_DESTINO }}
           from: ${{ secrets.EMAIL_ORIGEM }}
+
+      # 💓 BETTER STACK HEARTBEAT (Monitoramento de Pipeline)
+      - name: Better Stack Heartbeat
+        if: success()
+        run: curl "${{ secrets.BETTERSTACK_HEARTBEAT_FRONTEND }}"

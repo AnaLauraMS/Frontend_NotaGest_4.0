@@ -145,7 +145,7 @@ const AddFileView: React.FC<AddFileViewProps> = ({ onAddFile }) => {
                 property,
                 date: new Date().toLocaleDateString(),
                 size: `${(file.size / 1024).toFixed(2)} KB`,
-                url: filePath
+                url: filePath ?? undefined
             });
 
             // 5️⃣ Limpar formulário
