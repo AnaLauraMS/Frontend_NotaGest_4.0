@@ -32,6 +32,9 @@
 , "components/PropertyList/PropertyList.tsx"  ],
   "exclude": [
     "node_modules",
-    ".next"
+    ".next",
+    "stories",
+    "**/*.test.ts",
+    "**/*.test.tsx"
   ]
 }
