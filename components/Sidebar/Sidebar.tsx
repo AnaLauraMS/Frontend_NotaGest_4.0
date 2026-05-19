@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import packageJson from '../../package.json';
 import {
     HomeIcon,
     FolderIcon,
@@ -185,9 +186,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                 <div className="w-full px-4 border-t border-gray-100 py-4 shrink-0 bg-white">
                     {!isCollapsed ? (
-                        <p className="text-xs text-gray-400 text-center">v1.4.0 - Notagest</p>
+                        <p className="text-xs text-gray-400 text-center">v{packageJson.version || '1.4.0'} - Notagest</p>
                     ) : (
-                        <p className="text-[10px] text-gray-400 text-center font-bold">v1.4</p>
+                        <p className="text-[10px] text-gray-400 text-center font-bold">v{(packageJson.version || '1.4.0').split('.').slice(0, 2).join('.')}</p>
                     )}
                 </div>
             </aside>

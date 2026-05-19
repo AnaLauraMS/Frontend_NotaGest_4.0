@@ -1,14 +1,15 @@
-name: Frontend CI
+name: Release
 
 on:
   push:
     branches:
       - main
-    tags-ignore:
-      - 'v*'
+      - development
 
 jobs:
-  build:
+  ci-test:
+    name: Continuous Integration (CI)
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
 
     steps:
@@ -19,7 +20,7 @@ jobs:
           fetch-depth: 0
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v2
         with:
           node-version: '22'
 
@@ -40,14 +41,16 @@ jobs:
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       # 🔖 VERSIONAMENTO
       - name: Instalar semver
+        if: github.ref == 'refs/heads/main'
         run: npm install -g semver
 
       - name: Criar tag inicial (se não existir)
+        if: github.ref == 'refs/heads/main'
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
@@ -57,6 +60,8 @@ jobs:
           fi
 
       - name: Calcular versão
+        if: github.ref == 'refs/heads/main'
+        id: version
         run: |
           # Busca a última tag que segue o padrão vX.X.X
           LAST_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1)
@@ -99,13 +104,13 @@ jobs:
 
           echo "Nova versão: $NEW_VERSION"
           echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
-          
-          
 
       - name: Atualizar package.json
+        if: github.ref == 'refs/heads/main'
         run: npm version ${{ env.new_version }} --no-git-tag-version
 
       - name: Commit e tag
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
@@ -129,7 +134,9 @@ jobs:
 
           git push origin main --tags
 
-      - name: Build and Push Docker Image
+      # 🐳 DOCKER BUILD & PUSH (Para Main)
+      - name: Build and Push Docker Image (Main)
+        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -137,6 +144,16 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/notagest-frontend:latest
             ${{ secrets.DOCKER_USERNAME }}/notagest-frontend:v${{ env.new_version }}
+
+      # 🐳 DOCKER BUILD & PUSH (Para Development)
+      - name: Build and Push Docker Image (Development)
+        if: github.ref == 'refs/heads/development'
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/notagest-frontend:dev
 
       # 📧 EMAIL EM CASO DE ERRO
       - name: Enviar e-mail de falha
@@ -152,7 +169,28 @@ jobs:
           to: ${{ secrets.EMAIL_DESTINO }}
           from: ${{ secrets.EMAIL_ORIGEM }}
 
-      # 💓 BETTER STACK HEARTBEAT (Monitoramento de Pipeline)
-      - name: Better Stack Heartbeat
-        if: success()
-        run: curl "${{ secrets.BETTERSTACK_HEARTBEAT_FRONTEND }}"
+  deploy-hml:
+    name: Deploy - Homologação (HML)
+    needs: ci-test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/development'
+    environment:
+      name: hml
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger HML Deploy Hook
+        run: |
+          echo "Disparando deploy para o ambiente de Homologação (HML)..."
+          # curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_HML }}"
+
+  deploy-prod:
+    name: Deploy - Produção (PROD)
+    needs: [ci-test, deploy-hml]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: prod
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger PROD Deploy Hook
+        run: |
+          echo "Disparando deploy para o ambiente de Produção (PROD)..."
+          # curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_PROD }}"
