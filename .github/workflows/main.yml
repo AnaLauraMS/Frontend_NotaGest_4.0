@@ -53,11 +53,11 @@ jobs:
 
       # 🔖 VERSIONAMENTO
       - name: Instalar semver
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/story-book'
         run: npm install -g semver
 
       - name: Criar tag inicial (se não existir)
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/story-book'
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
@@ -67,7 +67,7 @@ jobs:
           fi
 
       - name: Calcular versão
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/story-book'
         id: version
         run: |
           # Busca a última tag que segue o padrão vX.X.X
@@ -113,11 +113,11 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
 
       - name: Atualizar package.json
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/story-book'
         run: npm version ${{ env.new_version }} --no-git-tag-version
 
       - name: Commit e tag
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/story-book'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -139,7 +139,7 @@ jobs:
             git tag v${{ env.new_version }}
           fi
 
-          git push origin main --tags
+          git push origin HEAD --tags
 
       # 🐳 DOCKER BUILD & PUSH (Para Main)
       - name: Build and Push Docker Image (Main)
