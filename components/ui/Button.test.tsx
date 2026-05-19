@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { expect, test, jest } from '@jest/globals';
+import '@testing-library/jest-dom';
 import Button from './Button';
 
 test('renders button children correctly (AAA)', () => {
