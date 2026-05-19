@@ -1,6 +1,4 @@
-
-
-/** @type { import('@storybook/nextjs-vite').StorybookConfig } */
+/** @type { import('@storybook/nextjs').StorybookConfig } */
 const config = {
   "stories": [
     "../stories/**/*.mdx",
@@ -8,12 +6,11 @@ const config = {
   ],
   "addons": [
     "@chromatic-com/storybook",
-    "@storybook/addon-vitest",
     "@storybook/addon-a11y",
     "@storybook/addon-docs",
     "@storybook/addon-mcp"
   ],
-  "framework": "@storybook/nextjs-vite",
+  "framework": "@storybook/nextjs",
   "staticDirs": [
     "..\\public"
   ]
