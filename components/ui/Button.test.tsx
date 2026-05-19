@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { expect, test, vi } from 'vitest';
+import { expect, test, jest } from '@jest/globals';
 import Button from './Button';
 
 test('renders button children correctly (AAA)', () => {
@@ -18,7 +18,7 @@ test('renders button children correctly (AAA)', () => {
 
 test('handles click events (AAA)', async () => {
     // Arrange
-    const handleClick = vi.fn();
+    const handleClick = jest.fn();
     render(<Button onClick={handleClick}>Clique</Button>);
     
     // Act
