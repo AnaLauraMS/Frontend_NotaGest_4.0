@@ -3,6 +3,9 @@ import axios from 'axios';
 import { IoMdCloudUpload } from "react-icons/io";
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
+import Select from '../ui/Select';
 
 export interface FileData {
     id: number;
@@ -279,45 +282,32 @@ const AddFileView: React.FC<AddFileViewProps> = ({ onAddFile }) => {
 
                 <form className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input
+                        <Input
                             type="text"
                             placeholder="Título da Nota"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm placeholder-gray-500 focus:ring-[#0c4a6e] focus:border-[#0c4a6e]"
                         />
-                        <input
+                        <Input
                             type="number"
                             placeholder="Valor (R$)"
                             value={value}
                             onChange={(e) => setValue(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm placeholder-gray-500 focus:ring-[#0c4a6e] focus:border-[#0c4a6e]"
                         />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input
+                        <Input
                             type="date"
                             value={purchaseDate}
                             onChange={(e) => setPurchaseDate(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-[#0c4a6e] focus:border-[#0c4a6e]"
                         />
-                        <select
+                        <Select
                             value={property}
                             onChange={(e) => setProperty(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-[#0c4a6e] focus:border-[#0c4a6e]"
-                        >
-                            <option value="" disabled>Selecione um imóvel</option>
-                            {properties.length > 0 ? (
-                                properties.map((imovel) => (
-                                    <option key={imovel.id} value={imovel.id}>
-                                        {imovel.nome}
-                                    </option>
-                                ))
-                            ) : (
-                                <option disabled>Nenhum imóvel encontrado</option>
-                            )}
-                        </select>
+                            placeholderOption="Selecione um imóvel"
+                            options={properties.map((p) => ({ value: p.id, label: p.nome }))}
+                        />
                     </div>
 
                     <textarea
@@ -329,23 +319,19 @@ const AddFileView: React.FC<AddFileViewProps> = ({ onAddFile }) => {
                     />
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <select
+                        <Select
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-[#0c4a6e] focus:border-[#0c4a6e]"
-                        >
-                            <option value="Construção">Construção</option>
-                            <option value="Reforma">Reforma</option>
-                        </select>
-                        <select
+                            options={[
+                                { value: 'Construção', label: 'Construção' },
+                                { value: 'Reforma', label: 'Reforma' }
+                            ]}
+                        />
+                        <Select
                             value={subcategory}
                             onChange={(e) => setSubcategory(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-[#0c4a6e] focus:border-[#0c4a6e]"
-                        >
-                            {subcategories.map((item) => (
-                                <option key={item}>{item}</option>
-                            ))}
-                        </select>
+                            options={subcategories.map((item) => ({ value: item, label: item }))}
+                        />
                     </div>
 
                     <label className="group flex items-center justify-center w-full border-2 border-dashed border-blue-300 rounded-lg px-6 py-4 cursor-pointer transition-all duration-300 hover:border-blue-400 hover:bg-blue-50">
@@ -361,28 +347,25 @@ const AddFileView: React.FC<AddFileViewProps> = ({ onAddFile }) => {
                         <p className="text-sm text-sky-800 font-medium mb-3 text-center">
                             A Inteligência Artificial pode ler comprovantes borrados ou escritos à mão, mas para usar a IA você precisa anexar um arquivo primeiro.
                         </p>
-                        <button
+                        <Button
                             type="button"
                             onClick={handleAnalyzeAI}
-                            disabled={!file || analyzing}
-                            className={`px-6 py-2.5 font-bold text-white rounded-lg transition-all duration-300 ease-in-out transform shadow-md flex items-center gap-2
-                                ${!file ? 'bg-gray-300 cursor-not-allowed opacity-70' : 
-                                  analyzing ? 'bg-sky-400 cursor-wait' : 'bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 hover:shadow-lg hover:-translate-y-0.5'}`}
+                            disabled={!file}
+                            isLoading={analyzing}
+                            variant="secondary"
                         >
-                            <span className="text-xl">✨</span> {analyzing ? 'Analisando documento...' : 'Acionar IA'}
-                        </button>
+                            ✨ Acionar IA
+                        </Button>
                     </div>
 
                     <div className="flex justify-end pt-2">
-                        <button
+                        <Button
                             type="button"
                             onClick={handleSubmit}
-                            disabled={uploading}
-                            className={`px-8 py-2 font-bold text-white rounded-lg transition-all duration-300 ease-in-out transform hover:-translate-y-0.5 shadow-md hover:shadow-lg
-                                ${uploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#0c4a6e] hover:bg-[#09415c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0c4a6e]'}`}
+                            isLoading={uploading}
                         >
-                            {uploading ? 'Enviando...' : 'Salvar Nota Fiscal'}
-                        </button>
+                            Salvar Nota Fiscal
+                        </Button>
                     </div>
                 </form>
             </div>
